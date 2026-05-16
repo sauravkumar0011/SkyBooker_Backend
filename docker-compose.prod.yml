@@ -1,0 +1,231 @@
+# ============================================================
+#  SkyBooker — Production Docker Compose (EC2 Deployment)
+#  Pulls pre-built images from Docker Hub.
+#  Run with:  IMAGE_TAG=<build_number> docker compose -f docker-compose.prod.yml up -d
+# ============================================================
+
+services:
+
+  # ──────────────────────────────────────────────────────────
+  # RABBITMQ
+  # ──────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: skybooker-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # EUREKA SERVER
+  # ──────────────────────────────────────────────────────────
+  eureka-server:
+    image: sauravkumar0011/skybooker-eureka-server:${IMAGE_TAG:-latest}
+    container_name: skybooker-eureka
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # API GATEWAY
+  # ──────────────────────────────────────────────────────────
+  api-gateway:
+    image: sauravkumar0011/skybooker-api-gateway:${IMAGE_TAG:-latest}
+    container_name: skybooker-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # AUTH SERVICE
+  # ──────────────────────────────────────────────────────────
+  auth-service:
+    image: sauravkumar0011/skybooker-auth-service:${IMAGE_TAG:-latest}
+    container_name: skybooker-auth
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # FLIGHT SERVICE
+  # ──────────────────────────────────────────────────────────
+  flight-service:
+    image: sauravkumar0011/skybooker-flight-service:${IMAGE_TAG:-latest}
+    container_name: skybooker-flight
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # SEAT SERVICE
+  # ──────────────────────────────────────────────────────────
+  seat-service:
+    image: sauravkumar0011/skybooker-seat-service:${IMAGE_TAG:-latest}
+    container_name: skybooker-seat
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # BOOKING SERVICE
+  # ──────────────────────────────────────────────────────────
+  booking-service:
+    image: sauravkumar0011/skybooker-booking-service:${IMAGE_TAG:-latest}
+    container_name: skybooker-booking
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      seat-service:
+        condition: service_started
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # PASSENGER SERVICE
+  # ──────────────────────────────────────────────────────────
+  passenger-service:
+    image: sauravkumar0011/skybooker-passenger-service:${IMAGE_TAG:-latest}
+    container_name: skybooker-passenger
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # PAYMENT SERVICE
+  # ──────────────────────────────────────────────────────────
+  payment-service:
+    image: sauravkumar0011/skybooker-payment-service:${IMAGE_TAG:-latest}
+    container_name: skybooker-payment
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # NOTIFICATION SERVICE
+  # ──────────────────────────────────────────────────────────
+  notification-service:
+    image: sauravkumar0011/skybooker-notification-service:${IMAGE_TAG:-latest}
+    container_name: skybooker-notification
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # AIRLINE SERVICE
+  # ──────────────────────────────────────────────────────────
+  airline-service:
+    image: sauravkumar0011/skybooker-airline-service:${IMAGE_TAG:-latest}
+    container_name: skybooker-airline
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+
+networks:
+  skybooker-net:
+    driver: bridge

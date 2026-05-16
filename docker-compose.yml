@@ -1,0 +1,255 @@
+# ============================================================
+#  SkyBooker — Docker Compose
+#  Target: AWS EC2
+#  DB: AWS RDS MySQL (external — not in compose)
+#  MQ: RabbitMQ (containerised)
+# ============================================================
+
+services:
+
+  # ──────────────────────────────────────────────────────────
+  # RABBITMQ
+  # ──────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: skybooker-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # EUREKA SERVER  (start first — all others depend on it)
+  # ──────────────────────────────────────────────────────────
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: skybooker-eureka
+    restart: unless-stopped
+    ports:
+      - "${EUREKA_PORT:-8761}:8761"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # API GATEWAY
+  # ──────────────────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: skybooker-api-gateway
+    restart: unless-stopped
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # AUTH SERVICE
+  # ──────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: skybooker-auth
+    restart: unless-stopped
+    ports:
+      - "${AUTH_SERVICE_PORT:-8081}:8081"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # FLIGHT SERVICE
+  # ──────────────────────────────────────────────────────────
+  flight-service:
+    build:
+      context: ./flight-service
+      dockerfile: Dockerfile
+    container_name: skybooker-flight
+    restart: unless-stopped
+    ports:
+      - "${FLIGHT_SERVICE_PORT:-8082}:8082"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # SEAT SERVICE
+  # ──────────────────────────────────────────────────────────
+  seat-service:
+    build:
+      context: ./seat-service
+      dockerfile: Dockerfile
+    container_name: skybooker-seat
+    restart: unless-stopped
+    ports:
+      - "${SEAT_SERVICE_PORT:-8083}:8083"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # BOOKING SERVICE
+  # ──────────────────────────────────────────────────────────
+  booking-service:
+    build:
+      context: ./booking-service
+      dockerfile: Dockerfile
+    container_name: skybooker-booking
+    restart: unless-stopped
+    ports:
+      - "${BOOKING_SERVICE_PORT:-8084}:8084"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      seat-service:
+        condition: service_started
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # PASSENGER SERVICE
+  # ──────────────────────────────────────────────────────────
+  passenger-service:
+    build:
+      context: ./passenger-service
+      dockerfile: Dockerfile
+    container_name: skybooker-passenger
+    restart: unless-stopped
+    ports:
+      - "${PASSENGER_SERVICE_PORT:-8085}:8085"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # PAYMENT SERVICE
+  # ──────────────────────────────────────────────────────────
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: skybooker-payment
+    restart: unless-stopped
+    ports:
+      - "${PAYMENT_SERVICE_PORT:-8086}:8086"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # NOTIFICATION SERVICE
+  # ──────────────────────────────────────────────────────────
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: skybooker-notification
+    restart: unless-stopped
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8087}:8087"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+  # ──────────────────────────────────────────────────────────
+  # AIRLINE SERVICE
+  # ──────────────────────────────────────────────────────────
+  airline-service:
+    build:
+      context: ./airline-service
+      dockerfile: Dockerfile
+    container_name: skybooker-airline
+    restart: unless-stopped
+    ports:
+      - "${AIRLINE_SERVICE_PORT:-8088}:8088"
+    env_file:
+      - .env
+    environment:
+      EUREKA_DEFAULT_ZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - skybooker-net
+
+
+# ──────────────────────────────────────────────────────────
+# SHARED NETWORK
+# ──────────────────────────────────────────────────────────
+networks:
+  skybooker-net:
+    driver: bridge

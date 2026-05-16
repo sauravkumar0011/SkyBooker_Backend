@@ -1,0 +1,51 @@
+server:
+  port: ${PAYMENT_SERVICE_PORT:8086}
+
+spring:
+  config:
+    import: optional:file:../.env[.properties]
+  application:
+    name: payment-service
+
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${PAYMENT_DB_NAME:skybooker_payment_db}?createDatabaseIfNotExist=true
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    hikari:
+      pool-name: payment-service-pool
+      maximum-pool-size: 3
+      minimum-idle: 1
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+
+jwt:
+  secret: ${JWT_SECRET}
+
+logging:
+  level:
+    root: INFO
+    com.skybooker.payment: DEBUG
+
+razorpay:
+     key-id: ${RAZORPAY_KEY_ID}
+     key-secret: ${RAZORPAY_KEY_SECRET}

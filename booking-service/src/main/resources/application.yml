@@ -1,0 +1,56 @@
+server:
+  port: ${BOOKING_SERVICE_PORT:8084}
+
+spring:
+  config:
+    import: optional:file:../.env[.properties]
+  application:
+    name: booking-service
+
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${BOOKING_DB_NAME:skybooker_booking_db}?createDatabaseIfNotExist=true
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    hikari:
+      pool-name: booking-service-pool
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  cloud:
+     openfeign:
+         client:
+           config:
+            default:
+              connectTimeout: 50000
+              readTimeout: 50000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+
+jwt:
+  secret: ${JWT_SECRET}
+
+logging:
+  level:
+    root: INFO
+    com.skybooker.booking: DEBUG
+  file:
+    name: logs/booking-service.log

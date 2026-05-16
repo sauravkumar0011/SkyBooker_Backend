@@ -1,0 +1,27 @@
+# ============================================================
+#   SkyBooker — Root .gitignore
+# ============================================================
+
+# Environment secrets — NEVER commit the real .env
+.env
+
+# Maven build outputs
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# IDE / Editor
+.metadata/
+**/.idea/
+**/*.iml
+**/.project
+**/.classpath
+**/.settings/
+**/.factorypath
+
+# Logs
+**/logs/
+**/*.log
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,191 @@
+server:
+  port: ${API_GATEWAY_PORT:8080}
+
+spring:
+  config:
+    import: optional:file:../.env[.properties]
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+
+            # =========================
+            # SWAGGER / OPENAPI ROUTES FIRST
+            # Gateway path: /auth/v3/api-docs
+            # Service receives: /v3/api-docs
+            # =========================
+
+            - id: auth-service-docs
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/auth/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            - id: flight-service-docs
+              uri: lb://FLIGHT-SERVICE
+              predicates:
+                - Path=/flights/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            - id: seat-service-docs
+              uri: lb://SEAT-SERVICE
+              predicates:
+                - Path=/seats/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            - id: booking-service-docs
+              uri: lb://BOOKING-SERVICE
+              predicates:
+                - Path=/bookings/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            - id: passenger-service-docs
+              uri: lb://PASSENGER-SERVICE
+              predicates:
+                - Path=/passengers/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            - id: payment-service-docs
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/payments/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            - id: notification-service-docs
+              uri: lb://NOTIFICATION-SERVICE
+              predicates:
+                - Path=/notifications/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            - id: airline-service-docs
+              uri: lb://AIRLINE-SERVICE
+              predicates:
+                - Path=/airline/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+
+            # =========================
+            # NORMAL SERVICE ROUTES
+            # =========================
+
+            - id: auth-service
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/auth/**,/oauth2/authorization/**,/login/oauth2/code/**
+
+            - id: flight-service
+              uri: lb://FLIGHT-SERVICE
+              predicates:
+                - Path=/flights/**
+
+            - id: seat-service
+              uri: lb://SEAT-SERVICE
+              predicates:
+                - Path=/seats/**
+
+            - id: booking-service
+              uri: lb://BOOKING-SERVICE
+              predicates:
+                - Path=/bookings/**
+
+            - id: passenger-service
+              uri: lb://PASSENGER-SERVICE
+              predicates:
+                - Path=/passengers/**
+
+            - id: payment-service
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/payments/**
+
+            - id: notification-service
+              uri: lb://NOTIFICATION-SERVICE
+              predicates:
+                - Path=/notifications/**
+
+            - id: airline-service-airlines
+              uri: lb://AIRLINE-SERVICE
+              predicates:
+                - Path=/airlines/**
+
+            - id: airline-service-airports
+              uri: lb://AIRLINE-SERVICE
+              predicates:
+                - Path=/airports/**
+
+
+# =========================
+# SWAGGER UI AGGREGATION
+# =========================
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /auth/v3/api-docs
+
+      - name: Flight Service
+        url: /flights/v3/api-docs
+
+      - name: Seat Service
+        url: /seats/v3/api-docs
+
+      - name: Booking Service
+        url: /bookings/v3/api-docs
+
+      - name: Passenger Service
+        url: /passengers/v3/api-docs
+
+      - name: Payment Service
+        url: /payments/v3/api-docs
+
+      - name: Notification Service
+        url: /notifications/v3/api-docs
+
+      - name: Airline Service
+        url: /airline/v3/api-docs
+
+  api-docs:
+    enabled: true
+
+
+# =========================
+# EUREKA CONFIG
+# =========================
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+
+  instance:
+    prefer-ip-address: true
+
+
+# =========================
+# ACTUATOR
+# =========================
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+jwt:
+  secret: ${JWT_SECRET}
