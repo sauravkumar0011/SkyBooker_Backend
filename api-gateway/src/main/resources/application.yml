@@ -9,6 +9,15 @@ spring:
 
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: 
+              - "http://localhost:4200"
+              - "https://skybooker-fly.netlify.app"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
       server:
         webmvc:
           routes:
