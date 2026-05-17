@@ -59,7 +59,7 @@ services:
     container_name: skybooker-api-gateway
     restart: unless-stopped
     ports:
-      - "${API_GATEWAY_PORT:-8080}:8080"
+      - "${API_GATEWAY_PORT:-8090}:8090"
     env_file:
       - .env
     environment:
