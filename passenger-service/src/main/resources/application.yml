@@ -8,7 +8,7 @@ spring:
     name: passenger-service
 
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${PASSENGER_DB_NAME:skybooker_passenger_db}?createDatabaseIfNotExist=true
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${PASSENGER_DB_NAME:skybooker_passenger_db}
     username: ${MYSQL_USERNAME}
     password: ${MYSQL_PASSWORD}
     hikari:

@@ -8,7 +8,7 @@ spring:
     name: payment-service
 
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${PAYMENT_DB_NAME:skybooker_payment_db}?createDatabaseIfNotExist=true
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${PAYMENT_DB_NAME:skybooker_payment_db}
     username: ${MYSQL_USERNAME}
     password: ${MYSQL_PASSWORD}
     hikari:

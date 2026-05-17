@@ -8,7 +8,7 @@ spring:
     name: notification-service
 
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${NOTIFICATION_DB_NAME:skybooker_notification_db}?createDatabaseIfNotExist=true
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${NOTIFICATION_DB_NAME:skybooker_notification_db}
     username: ${MYSQL_USERNAME}
     password: ${MYSQL_PASSWORD}
     hikari:

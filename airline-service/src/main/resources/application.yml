@@ -8,7 +8,7 @@ spring:
     name: airline-service
 
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${AIRLINE_DB_NAME:skybooker_airline_db}?createDatabaseIfNotExist=true
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${AIRLINE_DB_NAME:skybooker_airline_db}
     username: ${MYSQL_USERNAME}
     password: ${MYSQL_PASSWORD}
     hikari:
