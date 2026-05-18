@@ -8,7 +8,7 @@ pipeline {
     environment {
         DOCKERHUB_USERNAME    = 'sauravkumar0011'
         DOCKERHUB_CREDENTIALS = credentials('DOCKERHUB_CREDENTIALS')  // Jenkins credential ID
-        EC2_HOST              = '13.233.178.135'
+        EC2_HOST              = '65.2.126.35'
         EC2_USER              = 'ubuntu'
         IMAGE_TAG             = "${env.BUILD_NUMBER}"
         REPO_URL              = 'https://github.com/sauravkumar0011/SkyBooker_Backend.git'
