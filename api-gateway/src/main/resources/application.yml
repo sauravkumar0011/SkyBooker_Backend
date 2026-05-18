@@ -4,28 +4,46 @@ server:
 spring:
   config:
     import: optional:file:../.env[.properties]
+
   application:
     name: api-gateway
 
   cloud:
     gateway:
+      proxy:
+        sensitive: []
       globalcors:
+        add-to-simple-url-handler-mapping: true
+
         cors-configurations:
           '[/**]':
-            allowedOrigins: 
+
+            allowedOrigins:
+              - "http://localhost:4200"
               - "https://skybooker-app.duckdns.org"
               - "https://skybooker-fly.netlify.app"
-            allowedMethods: "*"
+
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+
             allowedHeaders: "*"
+
+            exposedHeaders:
+              - Authorization
+
             allowCredentials: true
+
       server:
         webmvc:
           routes:
 
             # =========================
-            # SWAGGER / OPENAPI ROUTES FIRST
-            # Gateway path: /auth/v3/api-docs
-            # Service receives: /v3/api-docs
+            # SWAGGER ROUTES
             # =========================
 
             - id: auth-service-docs
@@ -84,9 +102,8 @@ spring:
               filters:
                 - StripPrefix=1
 
-
             # =========================
-            # NORMAL SERVICE ROUTES
+            # NORMAL ROUTES
             # =========================
 
             - id: auth-service
@@ -134,14 +151,10 @@ spring:
               predicates:
                 - Path=/airports/**
 
-
-# =========================
-# SWAGGER UI AGGREGATION
-# =========================
-
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
     urls:
       - name: Auth Service
         url: /auth/v3/api-docs
@@ -170,25 +183,16 @@ springdoc:
   api-docs:
     enabled: true
 
-
-# =========================
-# EUREKA CONFIG
-# =========================
-
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+
     register-with-eureka: true
     fetch-registry: true
 
   instance:
     prefer-ip-address: true
-
-
-# =========================
-# ACTUATOR
-# =========================
 
 management:
   endpoints:
